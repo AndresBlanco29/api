@@ -1,9 +1,12 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, BackgroundTasks
 from sqlalchemy import create_engine, Column, Integer, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from datetime import datetime
+from typing import List
+import time
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -32,34 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Manejo de conexiones WebSocket
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-manager = ConnectionManager()
-
-# WebSocket endpoint
-@app.websocket("/ws/ventas")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            await websocket.receive_text()  # Para mantener la conexión activa
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-
 # Endpoint para obtener ventas
 @app.get("/ventas")
 def obtener_ventas():
@@ -69,27 +44,27 @@ def obtener_ventas():
     db.close()
     return resultado
 
-# Endpoint para crear una venta (ejemplo de uso real)
-from datetime import datetime
-from fastapi import Body
+# Función de fondo para actualizar ventas
+def actualizar_ventas():
+    while True:
+        # Realiza el trabajo de actualización de ventas
+        print("Actualizando ventas...")
 
-@app.post("/ventas")
-async def crear_venta(total: float = Body(...)):
-    db = SessionLocal()
-    nueva_venta = Venta(Total_Venta=total, Fecha_Venta=datetime.now())
-    db.add(nueva_venta)
-    db.commit()
-    db.refresh(nueva_venta)
-    db.close()
+        # Aquí puedes consultar la base de datos para obtener nuevas ventas y actualizarlas
+        # Este código está solo para ilustración
+        db = SessionLocal()
+        ventas = db.query(Venta).all()
+        # Aquí procesas las ventas o las envías a algún sistema
 
-    # Enviar la nueva venta a todos los clientes conectados
-    await manager.broadcast("nueva_venta")
-    return {"mensaje": "Venta creada", "venta": {
-        "Id_Venta": nueva_venta.Id_Venta,
-        "Fecha_Venta": nueva_venta.Fecha_Venta.isoformat(),
-        "Total_Venta": nueva_venta.Total_Venta
-    }}
+        time.sleep(5)  # Espera 5 segundos antes de hacer la siguiente actualización
+
+# Endpoint para iniciar el background task
+@app.get("/start-updating")
+async def start_updating(background_tasks: BackgroundTasks):
+    background_tasks.add_task(actualizar_ventas)
+    return {"message": "Task started"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
 
