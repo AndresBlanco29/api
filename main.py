@@ -56,7 +56,7 @@ def actualizar_ventas():
         ventas = db.query(Venta).all()
         # Aquí procesas las ventas o las envías a algún sistema
 
-        time.sleep(5)  # Espera 5 segundos antes de hacer la siguiente actualización
+        time.sleep(1)  # Espera 5 segundos antes de hacer la siguiente actualización
 
 # Endpoint para iniciar el background task
 @app.get("/start-updating")
