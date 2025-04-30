@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from fastapi.middleware.cors import CORSMiddleware
 
 # URL de conexión Railway
-DATABASE_URL = "mysql+mysqlconnector://root:jAvqAVgchtkGmQIWjgMkOqaptECwSVKk@metro.proxy.rlwy.net:49192/railway"
+DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
 
 # Configuración de SQLAlchemy
 engine = create_engine(DATABASE_URL)
