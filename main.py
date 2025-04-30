@@ -21,7 +21,7 @@ class Venta(Base):
     __tablename__ = "ventas"
     Id_Venta = Column(Integer, primary_key=True, index=True)
     Fecha_Venta = Column(DateTime)
-    Total_Venta = Column(Float)
+    Total = Column(Float)
 
 # Crear la aplicación FastAPI
 app = FastAPI()
@@ -40,7 +40,7 @@ app.add_middleware(
 def obtener_ventas():
     db = SessionLocal()
     ventas = db.query(Venta).all()
-    resultado = [{"Id_Venta": v.Id_Venta, "Fecha_Venta": v.Fecha_Venta.isoformat(), "Total_Venta": v.Total_Venta} for v in ventas]
+    resultado = [{"Id_Venta": v.Id_Venta, "Fecha_Venta": v.Fecha_Venta.isoformat(), "Total": v.Total} for v in ventas]
     db.close()
     return resultado
 
