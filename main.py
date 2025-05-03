@@ -1,12 +1,12 @@
-from fastapi import FastAPI, BackgroundTasks
-from sqlalchemy import create_engine, Column, Integer, Float, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from fastapi import FastAPI, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+from sqlalchemy import create_engine, Column, Integer, Float, DateTime, ForeignKey, String, func
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime
 from typing import List
 import time
+import uvicorn
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -16,55 +16,138 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Modelo de la tabla ventas
+# ---------------------
+# Modelos de Base de Datos
+# ---------------------
+
 class Venta(Base):
     __tablename__ = "ventas"
     Id_Venta = Column(Integer, primary_key=True, index=True)
     Fecha_Venta = Column(DateTime)
     Total = Column(Float)
 
-# Crear la aplicación FastAPI
+class Producto(Base):
+    __tablename__ = "productos"
+    Id_Producto = Column(Integer, primary_key=True, index=True)
+    Nombre = Column(String(100))
+
+class ProductoHasVenta(Base):
+    __tablename__ = "productos_has_ventas"
+    id = Column(Integer, primary_key=True, index=True)
+    Ventas_Id_Factura = Column(Integer, ForeignKey("ventas.Id_Venta"))
+    Productos_Id_Producto = Column(Integer, ForeignKey("productos.Id_Producto"))
+    Cantidad = Column(Integer)
+    Subtotal = Column(Float)
+
+    venta = relationship("Venta")
+    producto = relationship("Producto")
+
+# ---------------------
+# FastAPI App
+# ---------------------
+
 app = FastAPI()
 
 # CORS para Flutter
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Reemplaza "*" por el dominio real si es necesario
+    allow_origins=["*"],  # Cambiar a dominio real si es necesario
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Endpoint para obtener ventas
-@app.get("/ventas")
-def obtener_ventas():
+# ---------------------
+# Dependencia para DB
+# ---------------------
+
+def get_db():
     db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# ---------------------
+# Endpoints
+# ---------------------
+
+@app.get("/ventas")
+def obtener_ventas(db: Session = Depends(get_db)):
     ventas = db.query(Venta).all()
-    resultado = [{"Id_Venta": v.Id_Venta, "Fecha_Venta": v.Fecha_Venta.isoformat(), "Total": v.Total} for v in ventas]
-    db.close()
-    return resultado
+    return [
+        {
+            "Id_Venta": v.Id_Venta,
+            "Fecha_Venta": v.Fecha_Venta.isoformat(),
+            "Total": v.Total
+        }
+        for v in ventas
+    ]
 
-# Función de fondo para actualizar ventas
-def actualizar_ventas():
-    while True:
-        # Realiza el trabajo de actualización de ventas
-        print("Actualizando ventas...")
-
-        # Aquí puedes consultar la base de datos para obtener nuevas ventas y actualizarlas
-        # Este código está solo para ilustración
-        db = SessionLocal()
-        ventas = db.query(Venta).all()
-        # Aquí procesas las ventas o las envías a algún sistema
-
-        time.sleep(1)  # Espera 5 segundos antes de hacer la siguiente actualización
-
-# Endpoint para iniciar el background task
 @app.get("/start-updating")
 async def start_updating(background_tasks: BackgroundTasks):
     background_tasks.add_task(actualizar_ventas)
     return {"message": "Task started"}
 
+# ---------------------
+# Background Task
+# ---------------------
+
+def actualizar_ventas():
+    while True:
+        print("Actualizando ventas...")
+        db = SessionLocal()
+        ventas = db.query(Venta).all()
+        # Aquí podrías enviar los datos a otro sistema si es necesario
+        db.close()
+        time.sleep(5)  # Esperar 5 segundos entre iteraciones
+
+# ---------------------
+# Rotación de productos
+# ---------------------
+
+@app.get("/rotacion/dia")
+def productos_mas_vendidos_dia(db: Session = Depends(get_db), orden: str = "desc"):
+    hoy = datetime.now().date()
+    return obtener_rotacion(db, fecha_inicio=hoy, orden=orden)
+
+@app.get("/rotacion/mes")
+def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc"):
+    primer_dia_mes = datetime.now().replace(day=1).date()
+    return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
+
+def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", top_n: int = 5):
+    query = (
+        db.query(
+            Producto.Nombre,
+            func.sum(ProductoHasVenta.Cantidad).label("cantidad_total"),
+            func.sum(ProductoHasVenta.Subtotal).label("ventas_total")
+        )
+        .join(Producto, Producto.Id_Producto == ProductoHasVenta.Productos_Id_Producto)
+        .join(Venta, Venta.Id_Venta == ProductoHasVenta.Ventas_Id_Factura)
+        .filter(Venta.Fecha_Venta >= fecha_inicio)
+        .group_by(Producto.Nombre)
+    )
+
+    if orden == "asc":
+        query = query.order_by(func.sum(ProductoHasVenta.Cantidad).asc())
+    else:
+        query = query.order_by(func.sum(ProductoHasVenta.Cantidad).desc())
+
+    resultado = query.limit(top_n).all()
+
+    return [
+        {
+            "producto": r[0],
+            "cantidad": r[1],
+            "total": float(r[2])
+        }
+        for r in resultado
+    ]
+
+# ---------------------
+# Ejecutar servidor
+# ---------------------
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-
