@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from datetime import datetime
 from typing import List
+from sqlalchemy import func, desc
 import time
 
 # URL de conexión Railway
@@ -22,6 +23,19 @@ class Venta(Base):
     Id_Venta = Column(Integer, primary_key=True, index=True)
     Fecha_Venta = Column(DateTime)
     Total = Column(Float)
+
+
+class Producto(Base):
+    __tablename__ = "productos"
+    Id_Producto = Column(Integer, primary_key=True, index=True)
+    Nombre = Column(String(255))
+
+class ProductosHasVentas(Base):
+    __tablename__ = "productos_has_ventas"
+    Productos_Id_Producto = Column(Integer, primary_key=True)
+    Ventas_Id_Factura = Column(Integer, primary_key=True)
+    Cantidad = Column(Integer)
+
 
 # Crear la aplicación FastAPI
 app = FastAPI()
@@ -66,5 +80,29 @@ async def start_updating(background_tasks: BackgroundTasks):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+@app.get("/productos-mas-vendidos")
+def productos_mas_vendidos():
+    db = SessionLocal()
+    resultados = (
+        db.query(
+            Venta.Fecha_Venta,
+            Producto.Nombre,
+            func.sum(ProductosHasVentas.Cantidad).label("cantidad_vendida")
+        )
+        .join(ProductosHasVentas, ProductosHasVentas.Ventas_Id_Factura == Venta.Id_Venta)
+        .join(Producto, Producto.Id_Producto == ProductosHasVentas.Productos_Id_Producto)
+        .group_by(Producto.Nombre)
+        .order_by(desc("cantidad_vendida"))
+        .limit(10)
+        .all()
+    )
+    db.close()
+    return [
+        {
+            "nombre": r[1],
+            "cantidad_vendida": r[2]
+        } for r in resultados
+    ]
 
 
