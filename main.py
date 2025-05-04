@@ -78,7 +78,7 @@ def obtener_ventas(db: Session = Depends(get_db)):
     return [
         {
             "Id_Venta": v.Id_Venta,
-            "Fecha_Venta": v.Fecha_Venta.isoformat(),
+            "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
             "Total": v.Total
         }
         for v in ventas
