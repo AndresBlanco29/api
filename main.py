@@ -115,33 +115,23 @@ def obtener_ventas(db: Session = Depends(get_db)):
     resultado = []
 
     for v in ventas:
+        # Buscar productos vendidos relacionados con esta venta
         productos_vendidos = db.query(ProductoHasVenta).filter(
             ProductoHasVenta.Ventas_Id_Factura == v.Id_Venta
         ).all()
 
         productos = []
-        ganancia_total = 0
-
         for pv in productos_vendidos:
-            producto = pv.producto
-            if producto:
-                ganancia_unidad = producto.Precio_Venta - producto.Precio_Compra
-                ganancia_producto = ganancia_unidad * pv.Cantidad
-                ganancia_total += ganancia_producto
-
-                productos.append({
-                    "Nombre_Producto": producto.Nombre,
-                    "Cantidad": pv.Cantidad,
-                    "Precio_Venta": producto.Precio_Venta,
-                    "Precio_Compra": producto.Precio_Compra,
-                    "Ganancia": ganancia_producto
-                })
+            productos.append({
+                "Nombre_Producto": pv.producto.Nombre if pv.producto else None,
+                "Cantidad": pv.Cantidad,
+                "Precio": pv.producto.Precio_Venta if pv.producto else None
+            })
 
         resultado.append({
             "Id_Venta": v.Id_Venta,
             "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
             "Total": v.Total,
-            "Ganancia_Total": ganancia_total,
             "empleados": {
                 "Nombres": v.empleado.Nombres if v.empleado else None
             },
@@ -149,7 +139,6 @@ def obtener_ventas(db: Session = Depends(get_db)):
         })
 
     return resultado
-
 
 
 @app.get("/start-updating")
@@ -191,9 +180,11 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
             Producto.Nombre,
             Producto.Marca,
             Producto.Precio_Venta,
+            Producto.Precio_Compra,  # Obtenemos el costo de compra
             Producto.Codigo_Barras,
             func.sum(ProductoHasVenta.Cantidad).label("cantidad_total"),
-            func.sum(ProductoHasVenta.Subtotal).label("ventas_total")
+            func.sum(ProductoHasVenta.Subtotal).label("ventas_total"),
+            func.sum(Producto.Precio_Compra * ProductoHasVenta.Cantidad).label("costo_total")  # Calculamos el costo total
         )
         .join(Producto, Producto.Id_Producto == ProductoHasVenta.Productos_Id_Producto)
         .join(Venta, Venta.Id_Venta == ProductoHasVenta.Ventas_Id_Factura)
@@ -208,15 +199,19 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
 
     resultado = query.limit(top_n).all()
 
+    # Calculamos la ganancia y retornamos los resultados
     return [
         {
             "id": r[0],
             "nombre": r[1],
             "marca": r[2],
             "precio": float(r[3]),
-            "codigo_barras": r[4],
-            "cantidad": r[5],
-            "total": float(r[6])
+            "costo": float(r[4]),
+            "codigo_barras": r[5],
+            "cantidad": r[6],
+            "total": float(r[7]),
+            "costo_total": float(r[8]),
+            "ganancia": float(r[7]) - float(r[8])  # Ganancia = ventas_total - costo_total
         }
         for r in resultado
     ]
@@ -227,3 +222,4 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
