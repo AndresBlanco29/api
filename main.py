@@ -39,7 +39,33 @@ class empleados(Base):
 class Producto(Base):
     __tablename__ = "productos"
     Id_Producto = Column(Integer, primary_key=True, index=True)
+    Nombre = Column(String(90))
+    Precio_Venta = Column(Float)
+    Precio_Compra = Column(Float)
+    Cantidad = Column(Integer)
+    Marca = Column(String(90))
+    Descripcion = Column(String)
+    Categoria = Column(String(50))
+    Fecha_Entrada = Column(DateTime)
+    Fecha_Vencimiento = Column(DateTime)
+    Unidad_Medida = Column(String(20))
+    Proveedor_ID = Column(Integer, ForeignKey("proveedores.Id_Proveedor"))
+    Ubicacion_Estante = Column(String(50))
+    Codigo_Barras = Column(String(50))
+    ubicacion_pasillo = Column(String(50))
+
+    proveedor = relationship("Proveedor", back_populates="productos")
+    
+class Proveedor(Base):
+    __tablename__ = "proveedores"
+    Id_Proveedor = Column(Integer, primary_key=True, index=True)
     Nombre = Column(String(100))
+    Telefono = Column(String(20))
+    Direccion = Column(String(200))
+    Email = Column(String(100))
+
+    productos = relationship("Producto", back_populates="proveedor")
+
 
 class ProductoHasVenta(Base):
     __tablename__ = "productos_has_ventas"
