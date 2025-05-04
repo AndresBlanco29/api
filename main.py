@@ -49,6 +49,7 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
+    empleado = relationship("empleados")
 
 # ---------------------
 # FastAPI App
