@@ -27,6 +27,8 @@ class Venta(Base):
     Total = Column(Float)
     Empleados_Id_Empleados = Column(Integer, ForeignKey("empleados.Id_Empleados"))
 
+    empleado = relationship("empleados")
+
 class empleados(Base):
     __tablename__ = "empleados"
     Id_Empleados = Column(Integer, primary_key=True, index=True)
@@ -49,7 +51,7 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
-    empleado = relationship("empleados")
+    
 
 # ---------------------
 # FastAPI App
@@ -89,6 +91,9 @@ def obtener_ventas(db: Session = Depends(get_db)):
             "Id_Venta": v.Id_Venta,
             "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
             "Total": v.Total
+            "empleados": {
+                "Nombres": v.empleado.Nombres if v.empleado else None
+            }
         }
         for v in ventas
     ]
