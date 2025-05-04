@@ -25,14 +25,14 @@ class Venta(Base):
     Id_Venta = Column(Integer, primary_key=True, index=True)
     Fecha_Venta = Column(DateTime)
     Total = Column(Float)
-    Empleados_Id_Empleados = Column(Integer, index=True)
+    Empleados_Id_Empleados = Column(Integer, ForeignKey("empleados.Id_Empleados"))
 
 class empleados(Base):
     __tablename__ = "empleados"
     Id_Empleados = Column(Integer, primary_key=True, index=True)
-    Nombres = Column(Varchar(90))
-    Telefono = Column(Varchar(90))
-    Correo = Column(Varchar(90))
+    Nombres = Column(String(100))
+    Telefono = Column(String(100))
+    Correo = Column(String(100))
 
 class Producto(Base):
     __tablename__ = "productos"
