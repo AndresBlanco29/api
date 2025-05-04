@@ -110,35 +110,44 @@ def get_db():
 # ---------------------
 
 @app.get("/ventas")
-def obtener_ventas(db: Session = Depends(get_db)):
-    ventas = db.query(Venta).all()
-    resultado = []
+def obtener_ventas():
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor(dictionary=True)
 
-    for v in ventas:
-        # Buscar productos vendidos relacionados con esta venta
-        productos_vendidos = db.query(ProductoHasVenta).filter(
-            ProductoHasVenta.Ventas_Id_Factura == v.Id_Venta
-        ).all()
+        # Consulta ventas y empleados
+        cursor.execute("""
+            SELECT v.Id_Venta, v.Total, v.Fecha_Venta, e.Nombres AS Nombre_Empleado
+            FROM ventas v
+            JOIN empleados e ON v.Empleados_id_Empleados = e.id_Empleados
+        """)
+        ventas = cursor.fetchall()
 
-        productos = []
-        for pv in productos_vendidos:
-            productos.append({
-                "Nombre_Producto": pv.producto.Nombre if pv.producto else None,
-                "Cantidad": pv.Cantidad,
-                "Precio": pv.producto.Precio_Venta if pv.producto else None
-            })
+        for venta in ventas:
+            id_venta = venta["Id_Venta"]
 
-        resultado.append({
-            "Id_Venta": v.Id_Venta,
-            "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
-            "Total": v.Total,
-            "empleados": {
-                "Nombres": v.empleado.Nombres if v.empleado else None
-            },
-            "productos_vendidos": productos
-        })
+            # Traer productos vendidos y calcular ganancia por producto
+            cursor.execute("""
+                SELECT p.Nombre_Producto, vhp.Cantidad, vhp.Precio_U as Precio,
+                       (vhp.Precio_U - vhp.Precio_Compra) * vhp.Cantidad as Ganancia
+                FROM ventas_has_productos vhp
+                JOIN productos p ON vhp.Productos_idProductos = p.idProductos
+                WHERE vhp.Ventas_idVenta = %s
+            """, (id_venta,))
+            productos = cursor.fetchall()
 
-    return resultado
+            venta["productos_vendidos"] = productos
+            venta["Ganancia"] = sum([prod["Ganancia"] for prod in productos])
+
+            # Estructura anidada para empleado
+            venta["empleados"] = {"Nombres": venta.pop("Nombre_Empleado")}
+
+        return JSONResponse(content=ventas)
+
+    except Error as e:
+        return {"error": str(e)}
+
+
 
 
 @app.get("/start-updating")
