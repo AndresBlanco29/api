@@ -112,17 +112,34 @@ def get_db():
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
     ventas = db.query(Venta).all()
-    return [
-        {
+    resultado = []
+
+    for v in ventas:
+        # Buscar productos vendidos relacionados con esta venta
+        productos_vendidos = db.query(ProductoHasVenta).filter(
+            ProductoHasVenta.Ventas_Id_Factura == v.Id_Venta
+        ).all()
+
+        productos = []
+        for pv in productos_vendidos:
+            productos.append({
+                "Nombre_Producto": pv.producto.Nombre if pv.producto else None,
+                "Cantidad": pv.Cantidad,
+                "Precio": pv.producto.Precio_Venta if pv.producto else None
+            })
+
+        resultado.append({
             "Id_Venta": v.Id_Venta,
             "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
             "Total": v.Total,
             "empleados": {
                 "Nombres": v.empleado.Nombres if v.empleado else None
-            }
-        }
-        for v in ventas
-    ]
+            },
+            "productos_vendidos": productos
+        })
+
+    return resultado
+
 
 @app.get("/start-updating")
 async def start_updating(background_tasks: BackgroundTasks):
