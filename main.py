@@ -110,50 +110,35 @@ def get_db():
 # ---------------------
 
 @app.get("/ventas")
-def obtener_ventas():
-    conexion = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="micromercado"
-    )
-    cursor = conexion.cursor(dictionary=True)
-
-    # Obtener las ventas
-    cursor.execute("SELECT * FROM ventas")
-    ventas = cursor.fetchall()
-
+def obtener_ventas(db: Session = Depends(get_db)):
+    ventas = db.query(Venta).all()
     resultado = []
-    for venta in ventas:
-        id_venta = venta['Id_Venta']
 
-        # Obtener productos vendidos de esa venta
-        cursor.execute("""
-            SELECT p.Nombre_Producto, vhp.Cantidad, vhp.Precio, p.Precio_Compra
-            FROM ventas_has_productos vhp
-            JOIN productos p ON vhp.id_productos = p.idProductos
-            WHERE vhp.id_venta = %s
-        """, (id_venta,))
-        productos = cursor.fetchall()
+    for v in ventas:
+        # Buscar productos vendidos relacionados con esta venta
+        productos_vendidos = db.query(ProductoHasVenta).filter(
+            ProductoHasVenta.Ventas_Id_Factura == v.Id_Venta
+        ).all()
 
-        # Calcular la ganancia total de esta venta
-        ganancia_total = sum([
-            (producto['Precio'] - producto['Precio_Compra']) * producto['Cantidad']
-            for producto in productos
-        ])
+        productos = []
+        for pv in productos_vendidos:
+            productos.append({
+                "Nombre_Producto": pv.producto.Nombre if pv.producto else None,
+                "Cantidad": pv.Cantidad,
+                "Precio": pv.producto.Precio_Venta if pv.producto else None
+            })
 
-        # Obtener empleado
-        cursor.execute("SELECT Nombres FROM empleados WHERE id_empleados = %s", (venta['empleados_id_empleados'],))
-        empleado = cursor.fetchone()
-        venta['empleados'] = empleado
-        venta['productos_vendidos'] = productos
-        venta['Ganancia'] = ganancia_total
-        resultado.append(venta)
+        resultado.append({
+            "Id_Venta": v.Id_Venta,
+            "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
+            "Total": v.Total,
+            "empleados": {
+                "Nombres": v.empleado.Nombres if v.empleado else None
+            },
+            "productos_vendidos": productos
+        })
 
-    conexion.close()
     return resultado
-
-
 
 
 @app.get("/start-updating")
