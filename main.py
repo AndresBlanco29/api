@@ -109,7 +109,7 @@ def get_db():
 # Endpoints
 # ---------------------
 
-@app.get("/ventas", response_model=List[Venta])
+@app.get("/ventas")
 def obtener_ventas():
     conexion = mysql.connector.connect(
         host="localhost",
