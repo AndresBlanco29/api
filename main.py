@@ -90,9 +90,9 @@ def obtener_ventas(db: Session = Depends(get_db)):
         {
             "Id_Venta": v.Id_Venta,
             "Fecha_Venta": v.Fecha_Venta.strftime("%Y-%m-%d %H:%M:%S"),
-            "Total": v.Total
+            "Total": v.Total,
             "empleados": {
-                "Nombres": v.empleados.Nombres if v.empleados else None
+                "Nombres": v.empleado.Nombres if v.empleado else None
             }
         }
         for v in ventas
