@@ -128,14 +128,18 @@ def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc
 def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", top_n: int = 5):
     query = (
         db.query(
+            Producto.Id_Producto,
             Producto.Nombre,
+            Producto.Marca,
+            Producto.Precio_Venta,
+            Producto.Codigo_Barras,
             func.sum(ProductoHasVenta.Cantidad).label("cantidad_total"),
             func.sum(ProductoHasVenta.Subtotal).label("ventas_total")
         )
         .join(Producto, Producto.Id_Producto == ProductoHasVenta.Productos_Id_Producto)
         .join(Venta, Venta.Id_Venta == ProductoHasVenta.Ventas_Id_Factura)
         .filter(Venta.Fecha_Venta >= fecha_inicio)
-        .group_by(Producto.Nombre)
+        .group_by(Producto.Id_Producto)
     )
 
     if orden == "asc":
@@ -147,9 +151,13 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
 
     return [
         {
-            "producto": r[0],
-            "cantidad": r[1],
-            "total": float(r[2])
+            "id": r[0],
+            "nombre": r[1],
+            "marca": r[2],
+            "precio": float(r[3]),
+            "codigo_barras": r[4],
+            "cantidad": r[5],
+            "total": float(r[6])
         }
         for r in resultado
     ]
