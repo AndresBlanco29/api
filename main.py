@@ -173,43 +173,53 @@ def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc
     primer_dia_mes = datetime.now().replace(day=1).date()
     return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
 
-def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", top_n: int = 5):
+def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", top_n: int = None):
+    # Subconsulta para obtener las ventas
+    ventas_subquery = (
+        db.query(
+            ProductoHasVenta.Productos_Id_Producto,
+            func.sum(ProductoHasVenta.Cantidad).label("cantidad_total"),
+            func.sum(ProductoHasVenta.Subtotal).label("ventas_total")
+        )
+        .join(Venta, Venta.Id_Venta == ProductoHasVenta.Ventas_Id_Factura)
+        .filter(Venta.Fecha_Venta >= fecha_inicio)
+        .group_by(ProductoHasVenta.Productos_Id_Producto)
+        .subquery()
+    )
+
+    # Consulta principal que incluye todos los productos
     query = (
         db.query(
             Producto.Id_Producto,
             Producto.Nombre,
             Producto.Marca,
             Producto.Precio_Venta,
-            Producto.Precio_Compra,  # Obtenemos el costo de compra
             Producto.Codigo_Barras,
-            func.sum(ProductoHasVenta.Cantidad).label("cantidad_total"),
-            func.sum(ProductoHasVenta.Subtotal).label("ventas_total"),
-            func.sum(Producto.Precio_Compra * ProductoHasVenta.Cantidad).label("costo_total")  # Calculamos el costo total
+            func.coalesce(ventas_subquery.c.cantidad_total, 0).label("cantidad_total"),
+            func.coalesce(ventas_subquery.c.ventas_total, 0).label("ventas_total")
         )
-        .join(Producto, Producto.Id_Producto == ProductoHasVenta.Productos_Id_Producto)
-        .join(Venta, Venta.Id_Venta == ProductoHasVenta.Ventas_Id_Factura)
-        .filter(Venta.Fecha_Venta >= fecha_inicio)
-        .group_by(Producto.Id_Producto)
+        .outerjoin(ventas_subquery, Producto.Id_Producto == ventas_subquery.c.Productos_Id_Producto)
     )
 
     if orden == "asc":
-        query = query.order_by(func.sum(ProductoHasVenta.Cantidad).asc())
+        query = query.order_by(func.coalesce(ventas_subquery.c.cantidad_total, 0).asc())
     else:
-        query = query.order_by(func.sum(ProductoHasVenta.Cantidad).desc())
+        query = query.order_by(func.coalesce(ventas_subquery.c.cantidad_total, 0).desc())
 
-    resultado = query.limit(top_n).all()
+    if top_n:
+        query = query.limit(top_n)
 
-    # Calculamos la ganancia y retornamos los resultados
+    resultado = query.all()
+
     return [
-    {
+        {
         "id": r[0],
         "nombre": r[1],
         "marca": r[2],
         "precio": float(r[3] or 0),
-        "costo": float(r[4] or 0),
-        "codigo_barras": r[5],
-        "cantidad": r[6] or 0,
-        "total": float(r[7] or 0),
+        "codigo_barras": r[4],
+        "cantidad": int(r[5] or 0),
+        "total": float(r[6] or 0)
         "costo_total": float(r[8] or 0),
         "ganancia": float(r[7] or 0) - float(r[8] or 0)
     }
@@ -235,6 +245,17 @@ def productos_mas_vendidos_dia_mas(db: Session = Depends(get_db), orden: str = "
 def productos_mas_vendidos_mes_mas(db: Session = Depends(get_db), orden: str = "desc"):
     primer_dia_mes = datetime.now().replace(day=1).date()
     return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
+
+@app.get("/rotacion/todos/dia")
+def productos_todos_dia(db: Session = Depends(get_db), orden: str = "desc"):
+    hoy = datetime.now().date()
+    return obtener_rotacion(db, fecha_inicio=hoy, orden=orden)
+
+@app.get("/rotacion/todos/mes")
+def productos_todos_mes(db: Session = Depends(get_db), orden: str = "desc"):
+    primer_dia_mes = datetime.now().replace(day=1).date()
+    return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
+
     
 # ---------------------
 # Ejecutar servidor
