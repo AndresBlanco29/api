@@ -216,7 +216,26 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
     for r in resultado
 ]
 
+@app.get("/rotacion/dia")
+def productos_mas_vendidos_dia(db: Session = Depends(get_db), orden: str = "desc"):
+    hoy = datetime.now().date()
+    return obtener_rotacion(db, fecha_inicio=hoy, orden=orden)
 
+@app.get("/rotacion/mes")
+def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc"):
+    primer_dia_mes = datetime.now().replace(day=1).date()
+    return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
+
+@app.get("/rotacion/masVendidos/dia")
+def productos_mas_vendidos_dia_mas(db: Session = Depends(get_db), orden: str = "desc"):
+    hoy = datetime.now().date()
+    return obtener_rotacion(db, fecha_inicio=hoy, orden=orden)
+
+@app.get("/rotacion/masVendidos/mes")
+def productos_mas_vendidos_mes_mas(db: Session = Depends(get_db), orden: str = "desc"):
+    primer_dia_mes = datetime.now().replace(day=1).date()
+    return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
+    
 # ---------------------
 # Ejecutar servidor
 # ---------------------
