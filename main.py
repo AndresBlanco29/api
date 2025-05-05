@@ -140,6 +140,32 @@ def obtener_ventas(db: Session = Depends(get_db)):
 
     return resultado
 
+@app.get("/productos")
+def obtener_productos(db: Session = Depends(get_db)):
+    productos = db.query(Producto).all()
+    resultado = []
+
+    for p in productos:
+        resultado.append({
+            "id": p.Id_Producto,
+            "nombre": p.Nombre,
+            "precio_venta": p.Precio_Venta,
+            "precio_compra": p.Precio_Compra,
+            "cantidad": p.Cantidad,
+            "marca": p.Marca,
+            "descripcion": p.Descripcion,
+            "categoria": p.Categoria,
+            "fecha_entrada": p.Fecha_Entrada.strftime("%Y-%m-%d") if p.Fecha_Entrada else None,
+            "fecha_vencimiento": p.Fecha_Vencimiento.strftime("%Y-%m-%d") if p.Fecha_Vencimiento else None,
+            "unidad_medida": p.Unidad_Medida,
+            "proveedor": p.proveedor.Nombre if p.proveedor else None,
+            "ubicacion_estante": p.Ubicacion_Estante,
+            "ubicacion_pasillo": p.ubicacion_pasillo,
+            "codigo_barras": p.Codigo_Barras,
+        })
+
+    return resultado
+
 
 @app.get("/start-updating")
 async def start_updating(background_tasks: BackgroundTasks):
