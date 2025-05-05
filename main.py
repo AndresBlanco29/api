@@ -316,6 +316,16 @@ def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden:
         return {"error": "Periodo no válido"}
     return obtener_rotacion_todos(db, fecha_inicio=fecha_inicio, orden=orden)
 
+@app.get("/sales")
+def sales_data(db: Session = Depends(get_db)):
+    ventas = db.query(Venta).all()
+    return [
+        {
+            "date": v.Fecha_Venta.strftime("%Y-%m-%dT%H:%M:%S"),
+            "ventas": v.Total
+        }
+        for v in ventas
+    ]
     
 # ---------------------
 # Ejecutar servidor
