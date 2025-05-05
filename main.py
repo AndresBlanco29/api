@@ -242,6 +242,50 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
     for r in resultado
 ]
 
+def obtener_rotacion_todos(db: Session, fecha_inicio: datetime, orden: str = "desc"):
+    query = (
+        db.query(
+            Producto.Id_Producto,
+            Producto.Nombre,
+            Producto.Marca,
+            Producto.Precio_Venta,
+            Producto.Precio_Compra,
+            Producto.Codigo_Barras,
+            func.coalesce(func.sum(ProductoHasVenta.Cantidad), 0).label("cantidad_total"),
+            func.coalesce(func.sum(ProductoHasVenta.Subtotal), 0).label("ventas_total"),
+            func.coalesce(func.sum(Producto.Precio_Compra * ProductoHasVenta.Cantidad), 0).label("costo_total")
+        )
+        .outerjoin(ProductoHasVenta, Producto.Id_Producto == ProductoHasVenta.Productos_Id_Producto)
+        .outerjoin(Venta, Venta.Id_Venta == ProductoHasVenta.Ventas_Id_Factura)
+        .filter(
+            (Venta.Fecha_Venta >= fecha_inicio) | (Venta.Fecha_Venta == None)
+        )
+        .group_by(Producto.Id_Producto)
+    )
+    
+    if orden == "asc":
+        query = query.order_by(func.coalesce(func.sum(ProductoHasVenta.Cantidad), 0).asc())
+    else:
+        query = query.order_by(func.coalesce(func.sum(ProductoHasVenta.Cantidad), 0).desc())
+        
+    resultado = query.all()
+    
+    return [
+        {
+            "id": r[0],
+            "nombre": r[1],
+            "marca": r[2],
+            "precio": float(r[3] or 0),
+            "costo": float(r[4] or 0),
+            "codigo_barras": r[5],
+            "cantidad": r[6] or 0,
+            "total": float(r[7] or 0),
+            "costo_total": float(r[8] or 0),
+            "ganancia": float(r[7] or 0) - float(r[8] or 0)
+        }
+        for r in resultado
+    ]
+
 @app.get("/rotacion/dia")
 def productos_mas_vendidos_dia(db: Session = Depends(get_db), orden: str = "desc"):
     hoy = datetime.now().date()
@@ -261,6 +305,17 @@ def productos_mas_vendidos_dia_mas(db: Session = Depends(get_db), orden: str = "
 def productos_mas_vendidos_mes_mas(db: Session = Depends(get_db), orden: str = "desc"):
     primer_dia_mes = datetime.now().replace(day=1).date()
     return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
+
+@app.get("/rotacion/todos/{periodo}")
+def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden: str = "desc"):
+    if periodo == "dia":
+        fecha_inicio = datetime.now().date()
+    elif periodo == "mes":
+        fecha_inicio = datetime.now().replace(day=1).date()
+    else:
+        return {"error": "Periodo no válido"}
+    return obtener_rotacion_todos(db, fecha_inicio=fecha_inicio, orden=orden)
+
     
 # ---------------------
 # Ejecutar servidor
