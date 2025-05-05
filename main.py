@@ -318,15 +318,36 @@ def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden:
     return obtener_rotacion_todos(db, fecha_inicio=fecha_inicio, orden=orden)
 
 @app.get("/sales")
-def sales_data(db: Session = Depends(get_db)):
-    ventas = db.query(Venta).all()
-    return [
-        {
-            "date": v.Fecha_Venta.strftime("%Y-%m-%dT%H:%M:%S"),
-            "ventas": v.Total
-        }
-        for v in ventas
-    ]
+def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = Depends(get_db)):
+    start_date = datetime.fromisoformat(start)
+    end_date = datetime.fromisoformat(end)
+    if aggregation.lower() == "diario":
+        results = db.query(
+            func.date(Venta.Fecha_Venta).label("date"),
+            func.sum(Venta.Total).label("ventas")
+        ).filter(
+            Venta.Fecha_Venta >= start_date,
+            Venta.Fecha_Venta <= end_date
+        ).group_by(func.date(Venta.Fecha_Venta)).all()
+        return [
+            {
+                "date": datetime.strptime(str(r.date), "%Y-%m-%d").strftime("%Y-%m-%dT00:00:00"),
+                "ventas": r.ventas
+            }
+            for r in results
+        ]
+    else:
+        ventas = db.query(Venta).filter(
+            Venta.Fecha_Venta >= start_date,
+            Venta.Fecha_Venta <= end_date
+        ).all()
+        return [
+            {
+                "date": v.Fecha_Venta.strftime("%Y-%m-%dT%H:%M:%S"),
+                "ventas": v.Total
+            }
+            for v in ventas
+        ]
     
 # ---------------------
 # Ejecutar servidor
