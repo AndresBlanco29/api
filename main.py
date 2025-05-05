@@ -268,7 +268,7 @@ def obtener_rotacion_todos(db: Session, fecha_inicio: datetime, orden: str = "de
     else:
         query = query.order_by(func.coalesce(func.sum(ProductoHasVenta.Cantidad), 0).desc())
         
-    resultado = query.all()
+    resultado = query.limit(7).all()
     
     return [
         {
