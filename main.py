@@ -201,20 +201,21 @@ def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", t
 
     # Calculamos la ganancia y retornamos los resultados
     return [
-        {
-            "id": r[0],
-            "nombre": r[1],
-            "marca": r[2],
-            "precio": float(r[3]),
-            "costo": float(r[4]),
-            "codigo_barras": r[5],
-            "cantidad": r[6],
-            "total": float(r[7]),
-            "costo_total": float(r[8]),
-            "ganancia": float(r[7]) - float(r[8])  # Ganancia = ventas_total - costo_total
-        }
-        for r in resultado
-    ]
+    {
+        "id": r[0],
+        "nombre": r[1],
+        "marca": r[2],
+        "precio": float(r[3] or 0),
+        "costo": float(r[4] or 0),
+        "codigo_barras": r[5],
+        "cantidad": r[6] or 0,
+        "total": float(r[7] or 0),
+        "costo_total": float(r[8] or 0),
+        "ganancia": float(r[7] or 0) - float(r[8] or 0)
+    }
+    for r in resultado
+]
+
 
 # ---------------------
 # Ejecutar servidor
