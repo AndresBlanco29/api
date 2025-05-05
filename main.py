@@ -140,6 +140,22 @@ def obtener_ventas(db: Session = Depends(get_db)):
 
     return resultado
 
+@app.get("/productos", response_model=List[ProductoResponse])
+def obtener_productos(db: Session = Depends(get_db)):
+    productos = db.query(Producto).all()
+
+    resultado = []
+    for p in productos:
+        resultado.append({
+            "Id_Producto": p.Id_Producto,
+            "Nombre": p.Nombre,
+            "Precio_Venta": p.Precio_Venta,
+            "Cantidad": p.Cantidad,
+            "imagen_url": None  # Aquí puedes personalizar si tienes ruta de imágenes
+        })
+
+    return resultado
+
 
 @app.get("/start-updating")
 async def start_updating(background_tasks: BackgroundTasks):
