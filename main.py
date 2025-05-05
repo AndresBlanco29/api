@@ -321,7 +321,7 @@ def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden:
 @app.get("/sales")
 def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = Depends(get_db)):
     start_date = datetime.fromisoformat(start)
-    end_date = datetime.fromisoformat(end)
+    end_date = datetime.fromisoformat(end) + timedelta(days=1) - timedelta(seconds=1)
     if aggregation.lower() == "diario":
         results = db.query(
             func.date(Venta.Fecha_Venta).label("date"),
