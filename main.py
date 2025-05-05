@@ -53,6 +53,7 @@ class Producto(Base):
     Ubicacion_Estante = Column(String(50))
     Codigo_Barras = Column(String(50))
     ubicacion_pasillo = Column(String(50))
+    url_imagen = Column(String(255))
 
     proveedor = relationship("Proveedor", back_populates="productos")
     
