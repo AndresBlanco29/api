@@ -322,24 +322,6 @@ def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden:
 
 @app.get("/sales")
 def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = Depends(get_db)):
-    """
-    Endpoint para obtener datos de ventas agregados o detallados dentro de un rango de fechas UTC.
-
-    Args:
-        start (str): Fecha de inicio en formato ISO 8601 UTC (ej: "2025-04-01T00:00:00Z").
-        end (str): Fecha de fin en formato ISO 8601 UTC (ej: "2025-05-05T23:59:59.999Z").
-        aggregation (str, optional): Tipo de agregación ('Diario', 'Semanal', 'Mensual', u otro para datos crudos). Default es "Diario".
-        db (Session, optional): Sesión de base de datos inyectada por FastAPI.
-
-    Returns:
-        List[dict]: Lista de diccionarios con los datos de ventas.
-                    Si aggregation='Diario', formato: [{"date": "YYYY-MM-DDTHH:MM:SSZ", "ventas": float}]
-                    Si no, formato: [{"date": "YYYY-MM-DDTHH:MM:SSZ", "ventas": float}] (datos individuales)
-
-    Raises:
-        HTTPException: 400 si el formato de fecha es inválido.
-        HTTPException: 500 si ocurre un error de base de datos o servidor.
-    """
     try:
         # 1. Parsear fechas ISO UTC directamente.
         #    datetime.fromisoformat maneja 'Z' o '+00:00'. Usamos replace para compatibilidad.
