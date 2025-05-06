@@ -299,6 +299,7 @@ def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc
     primer_dia_mes = datetime.now().replace(day=1).date()
     return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
 
+# Nuevos endpoints para los productos más vendidos (ruta requerida por el frontend)
 @app.get("/rotacion/masVendidos/dia")
 def productos_mas_vendidos_dia_mas(db: Session = Depends(get_db), orden: str = "desc"):
     hoy = datetime.now().date()
