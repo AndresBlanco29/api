@@ -322,35 +322,110 @@ def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden:
 
 @app.get("/sales")
 def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = Depends(get_db)):
-    start_date = datetime.fromisoformat(start)
-    end_date = datetime.fromisoformat(end) + timedelta(days=1) - timedelta(seconds=1)
+    """
+    Endpoint para obtener datos de ventas agregados o detallados dentro de un rango de fechas UTC.
+
+    Args:
+        start (str): Fecha de inicio en formato ISO 8601 UTC (ej: "2025-04-01T00:00:00Z").
+        end (str): Fecha de fin en formato ISO 8601 UTC (ej: "2025-05-05T23:59:59.999Z").
+        aggregation (str, optional): Tipo de agregación ('Diario', 'Semanal', 'Mensual', u otro para datos crudos). Default es "Diario".
+        db (Session, optional): Sesión de base de datos inyectada por FastAPI.
+
+    Returns:
+        List[dict]: Lista de diccionarios con los datos de ventas.
+                    Si aggregation='Diario', formato: [{"date": "YYYY-MM-DDTHH:MM:SSZ", "ventas": float}]
+                    Si no, formato: [{"date": "YYYY-MM-DDTHH:MM:SSZ", "ventas": float}] (datos individuales)
+
+    Raises:
+        HTTPException: 400 si el formato de fecha es inválido.
+        HTTPException: 500 si ocurre un error de base de datos o servidor.
+    """
+    try:
+        # 1. Parsear fechas ISO UTC directamente.
+        #    datetime.fromisoformat maneja 'Z' o '+00:00'. Usamos replace para compatibilidad.
+        start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
+
+        # --- Logging para Depuración ---
+        print("-" * 20)
+        print(f"Endpoint /sales - Recibido:")
+        print(f"  Raw start: {start}")
+        print(f"  Raw end: {end}")
+        print(f"  Aggregation: {aggregation}")
+        print(f"Parseado:")
+        print(f"  start_date: {start_date} (TZ: {start_date.tzinfo})")
+        print(f"  end_date: {end_date} (TZ: {end_date.tzinfo})")
+        print("-" * 20)
+        # --- Fin Logging ---
+
+    except ValueError as e:
+        print(f"ERROR [sales_data]: Error parseando fechas - Start='{start}', End='{end}'. Error: {e}")
+        raise HTTPException(status_code=400, detail=f"Formato de fecha inválido: {e}")
+    except Exception as e: # Captura otros errores inesperados durante el parseo
+         print(f"ERROR [sales_data]: Error inesperado parseando fechas - {e}")
+         raise HTTPException(status_code=500, detail="Error interno procesando fechas.")
+
+    # 2. Realizar consulta a la Base de Datos
     if aggregation.lower() == "diario":
-        results = db.query(
-            func.date(Venta.Fecha_Venta).label("date"),
-            func.sum(Venta.Total).label("ventas")
-        ).filter(
-            Venta.Fecha_Venta >= start_date,
-            Venta.Fecha_Venta <= end_date
-        ).group_by(func.date(Venta.Fecha_Venta)).all()
-        return [
-            {
-                "date": datetime.strptime(str(r.date), "%Y-%m-%d").strftime("%Y-%m-%dT00:00:00"),
-                "ventas": r.ventas
-            }
-            for r in results
-        ]
-    else:
-        ventas = db.query(Venta).filter(
-            Venta.Fecha_Venta >= start_date,
-            Venta.Fecha_Venta <= end_date
-        ).all()
-        return [
-            {
-                "date": v.Fecha_Venta.strftime("%Y-%m-%dT%H:%M:%S"),
-                "ventas": v.Total
-            }
-            for v in ventas
-        ]
+        try:
+            # Agrupar por día calendario (basado en la fecha UTC)
+            results = db.query(
+                func.date(Venta.Fecha_Venta).label("date"), # func.date extrae la parte de fecha
+                func.sum(Venta.Total).label("ventas")
+            ).filter(
+                Venta.Fecha_Venta >= start_date, # Comparación con fechas UTC
+                Venta.Fecha_Venta <= end_date
+            ).group_by(
+                func.date(Venta.Fecha_Venta) # Agrupa por el día
+            ).order_by(
+                func.date(Venta.Fecha_Venta) # Ordena por fecha
+            ).all()
+
+            print(f"INFO [sales_data]: Resultados BD (Diario): {results}")
+
+            # 3. Formatear la respuesta para agregación diaria
+            return [
+                {
+                    # Combina la fecha (date) con la hora mínima (00:00:00) y formatea como ISO UTC
+                    "date": datetime.combine(r.date, dt_time.min).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "ventas": float(r.ventas or 0) # Asegura que sea float, maneja None
+                }
+                for r in results
+            ]
+        except Exception as e:
+            print(f"ERROR [sales_data]: Error en consulta DB (Diario) - {e}")
+            # Considerar loggear el traceback completo para depuración
+            # import traceback
+            # print(traceback.format_exc())
+            raise HTTPException(status_code=500, detail="Error consultando datos agregados.")
+
+    else: # Si no es 'Diario', devolver datos individuales (o implementar otras agregaciones)
+         try:
+            # Obtener ventas individuales dentro del rango UTC
+            ventas = db.query(Venta).filter(
+                Venta.Fecha_Venta >= start_date,
+                Venta.Fecha_Venta <= end_date
+            ).order_by(
+                Venta.Fecha_Venta # Ordenar por fecha/hora
+            ).all()
+
+            print(f"INFO [sales_data]: Resultados BD (No-Diario): {len(ventas)} registros")
+
+            # 3. Formatear la respuesta para datos individuales
+            return [
+                {
+                    # Formatear timestamp completo como ISO UTC
+                    "date": v.Fecha_Venta.strftime("%Y-%m-%dT%H:%M:%SZ") if v.Fecha_Venta else None,
+                    "ventas": float(v.Total or 0) # Asegura que sea float, maneja None
+                }
+                for v in ventas
+            ]
+         except Exception as e:
+            print(f"ERROR [sales_data]: Error en consulta DB (No-Diario) - {e}")
+            # import traceback
+            # print(traceback.format_exc())
+            raise HTTPException(status_code=500, detail="Error consultando datos detallados.")
+
 @app.get("/ventas-fechas")
 def obtener_fechas_ventas(db: Session = Depends(get_db)):
     fechas = db.query(Venta.Fecha_Venta).order_by(Venta.Fecha_Venta.asc()).limit(10).all()
