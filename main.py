@@ -350,6 +350,11 @@ def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = 
             }
             for v in ventas
         ]
+@app.get("/ventas-fechas")
+def obtener_fechas_ventas(db: Session = Depends(get_db)):
+    fechas = db.query(Venta.Fecha_Venta).order_by(Venta.Fecha_Venta.asc()).limit(10).all()
+    return [{"fecha": f[0]} for f in fechas]
+
     
 # ---------------------
 # Ejecutar servidor
