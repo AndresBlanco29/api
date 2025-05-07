@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime
 from typing import List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as dt_time
 import time
 import uvicorn
 
