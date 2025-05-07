@@ -28,9 +28,9 @@ class Venta(Base):
     Total = Column(Float)
     Empleados_Id_Empleados = Column(Integer, ForeignKey("empleados.Id_Empleados"))
 
-    empleado = relationship("empleados")
+    empleado = relationship("Empleado")
 
-class empleados(Base):
+class Empleado(Base):  # Renombrar la clase
     __tablename__ = "empleados"
     Id_Empleados = Column(Integer, primary_key=True, index=True)
     Nombres = Column(String(100))
