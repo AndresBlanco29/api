@@ -164,7 +164,7 @@ def obtener_productos(db: Session = Depends(get_db)):
             "ubicacion_estante": p.Ubicacion_Estante,
             "ubicacion_pasillo": p.ubicacion_pasillo,
             "codigo_barras": p.Codigo_Barras,
-            "url_iamgen": p.url_imagen,
+            "url_imagen": p.url_imagen,
         })
 
     return resultado
