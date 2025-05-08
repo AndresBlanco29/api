@@ -192,15 +192,6 @@ def actualizar_ventas():
 # Rotación de productos
 # ---------------------
 
-@app.get("/rotacion/dia")
-def productos_mas_vendidos_dia(db: Session = Depends(get_db), orden: str = "desc"):
-    hoy = datetime.now().date()
-    return obtener_rotacion(db, fecha_inicio=hoy, orden=orden)
-
-@app.get("/rotacion/mes")
-def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc"):
-    primer_dia_mes = datetime.now().replace(day=1).date()
-    return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
 
 def obtener_rotacion(db: Session, fecha_inicio: datetime, orden: str = "desc", top_n: int = 5):
     query = (
@@ -291,15 +282,16 @@ def obtener_rotacion_todos(db: Session, fecha_inicio: datetime, orden: str = "de
 
 @app.get("/rotacion/dia")
 def productos_mas_vendidos_dia(db: Session = Depends(get_db), orden: str = "desc"):
-    hoy = datetime.now().date()
+    # Ajustar para incluir todo el día (inicio del día)
+    hoy = datetime.combine(datetime.now().date(), dt_time.min)
     return obtener_rotacion(db, fecha_inicio=hoy, orden=orden)
 
 @app.get("/rotacion/mes")
 def productos_mas_vendidos_mes(db: Session = Depends(get_db), orden: str = "desc"):
-    primer_dia_mes = datetime.now().replace(day=1).date()
+    # Ajustar para incluir el primer día completo del mes
+    primer_dia_mes = datetime.combine(datetime.now().replace(day=1).date(), dt_time.min)
     return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
 
-# Nuevos endpoints para los productos más vendidos (ruta requerida por el frontend)
 @app.get("/rotacion/masVendidos/dia")
 def productos_mas_vendidos_dia_mas(db: Session = Depends(get_db), orden: str = "desc"):
     hoy = datetime.now().date()
@@ -309,7 +301,7 @@ def productos_mas_vendidos_dia_mas(db: Session = Depends(get_db), orden: str = "
 def productos_mas_vendidos_mes_mas(db: Session = Depends(get_db), orden: str = "desc"):
     primer_dia_mes = datetime.now().replace(day=1).date()
     return obtener_rotacion(db, fecha_inicio=primer_dia_mes, orden=orden)
-
+    
 @app.get("/rotacion/todos/{periodo}")
 def productos_todos_rotacion(periodo: str, db: Session = Depends(get_db), orden: str = "desc"):
     if periodo == "dia":
