@@ -160,12 +160,12 @@ def obtener_ventas(db: Session = Depends(get_db)):
 
 @app.get("/finanzas")
 def obtener_entrada_salida_dinero(db: Session = Depends(get_db)):
-    entradas = db.query(models.entrada_dinero).all()
-    salidas = db.query(models.salida_dinero).all()
+    Entrada = db.query(models.entrada_dinero).all()
+    Salida = db.query(models.salida_dinero).all()
 
     return {
-        "entradas": entradas,
-        "salidas": salidas
+        "Entrada": Entrada,
+        "Salida": Salida
     }
     
 
