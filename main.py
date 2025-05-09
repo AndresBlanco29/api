@@ -30,7 +30,7 @@ class Venta(Base):
 
     empleado = relationship("Empleado")
 
-class entrada_dinero(Base):
+class Entrada(Base):
     __tablename__ = "entrada_dinero"
     Id_Entrada = Column(Integer,primary_key=True, index=True)
     Asunto = Column(String(100))
@@ -38,7 +38,7 @@ class entrada_dinero(Base):
     Cajero = Column(String(100))
     Fecha = Column(DateTime)
 
-class salida_dinero(Base):
+class Salida(Base):
     __tablename__ = "salida_dinero"
     Id_Salida = Column(Integer,primary_key=True, index=True)
     Asunto = Column(String(100))
