@@ -30,6 +30,22 @@ class Venta(Base):
 
     empleado = relationship("Empleado")
 
+class entrada_dinero(Base):
+    __tablename__ = "entrada_dinero"
+    Id_Entrada = Column(Integer,primary_key=True, index=True)
+    Asunto = Column(String(100))
+    Cantidad = Column(Float)
+    Cajero = Column(String(100))
+    Fecha = Column(DateTime)
+
+class salida_dinero(Base):
+    __tablename__ = "salida_dinero"
+    Id_Salida = Column(Integer,primary_key=True, index=True)
+    Asunto = Column(String(100))
+    Cantidad = Column(Float)
+    Cajero = Column(String(100))
+    Fecha = Column(DateTime)
+
 class Empleado(Base):  # Renombrar la clase
     __tablename__ = "empleados"
     Id_Empleados = Column(Integer, primary_key=True, index=True)
