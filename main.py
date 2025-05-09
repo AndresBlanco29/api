@@ -158,6 +158,17 @@ def obtener_ventas(db: Session = Depends(get_db)):
 
     return resultado
 
+@app.get("/finanzas")
+def obtener_entrada_salida_dinero(db: Session = Depends(get_db)):
+    entradas = db.query(models.EntradaDinero).all()
+    salidas = db.query(models.SalidaDinero).all()
+
+    return {
+        "entradas": entradas,
+        "salidas": salidas
+    }
+    
+
 @app.get("/productos")
 def obtener_productos(db: Session = Depends(get_db)):
     productos = db.query(Producto).all()
