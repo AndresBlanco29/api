@@ -162,27 +162,11 @@ def obtener_ventas(db: Session = Depends(get_db)):
 def obtener_entrada_salida_dinero(db: Session = Depends(get_db)):
     entradas = db.query(Entrada).all()
     salidas = db.query(Salida).all()
-
     return {
-        "entradas": [
-            {
-                "id": e.Id_Entrada,
-                "asunto": e.Asunto,
-                "cantidad": e.Cantidad,
-                "cajero": e.Cajero,
-                "fecha": e.Fecha.strftime("%Y-%m-%d %H:%M:%S") if e.Fecha else None
-            } for e in entradas
-        ],
-        "salidas": [
-            {
-                "id": s.Id_Salida,
-                "asunto": s.Asunto,
-                "cantidad": s.Cantidad,
-                "cajero": s.Cajero,
-                "fecha": s.Fecha.strftime("%Y-%m-%d %H:%M:%S") if s.Fecha else None
-            } for s in salidas
-        ]
+        "entradas": entradas,
+        "salidas": salidas
     }
+
 
     
 
