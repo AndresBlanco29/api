@@ -52,6 +52,9 @@ class Empleado(Base):  # Renombrar la clase
     Nombres = Column(String(100))
     Telefono = Column(String(100))
     Correo = Column(String(100))
+    Fecha_nacimiento = Column(DateTime, nullable=True)
+    Fecha_ingreso = Column(DateTime, nullable=True)
+    Cargo = Column(String(90), nullable=True)
 
 class Producto(Base):
     __tablename__ = "productos"
@@ -433,6 +436,21 @@ def obtener_fechas_ventas(db: Session = Depends(get_db)):
     fechas = db.query(Venta.Fecha_Venta).order_by(Venta.Fecha_Venta.asc()).limit(10).all()
     return [{"fecha": f[0]} for f in fechas]
 
+@app.get("/empleados")
+def obtener_empleados(db: Session = Depends(get_db)):
+    empleados = db.query(Empleado).all()
+    return [
+        {
+            "Id_Empleados": e.Id_Empleados,
+            "Nombres": e.Nombres,
+            "Telefono": e.Telefono,
+            "Correo": e.Correo,
+            "Fecha_nacimiento": e.Fecha_nacimiento.strftime("%Y-%m-%d %H:%M:%S") if e.Fecha_nacimiento else None,
+            "Fecha_ingreso": e.Fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S") if e.Fecha_ingreso else None,
+            "Cargo": e.Cargo
+        }
+        for e in empleados
+    ]
     
 # ---------------------
 # Ejecutar servidor
