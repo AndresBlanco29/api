@@ -95,6 +95,14 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
+
+class EmpleadoCreate(BaseModel):
+    Nombres: str
+    Telefono: str = ""
+    Correo: str = ""
+    Fecha_nacimiento: datetime | None = None
+    Fecha_ingreso: datetime | None = None
+    Cargo: str = ""
     
 
 # ---------------------
@@ -203,6 +211,28 @@ async def start_updating(background_tasks: BackgroundTasks):
     background_tasks.add_task(actualizar_ventas)
     return {"message": "Task started"}
 
+@app.post("/empleados")
+def crear_empleado(empleado: EmpleadoCreate, db: Session = Depends(get_db)):
+    nuevo = Empleado(
+        Nombres=empleado.Nombres,
+        Telefono=empleado.Telefono,
+        Correo=empleado.Correo,
+        Fecha_nacimiento=empleado.Fecha_nacimiento,
+        Fecha_ingreso=empleado.Fecha_ingreso,
+        Cargo=empleado.Cargo
+    )
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return {
+        "Id_Empleados": nuevo.Id_Empleados,
+        "Nombres": nuevo.Nombres,
+        "Telefono": nuevo.Telefono,
+        "Correo": nuevo.Correo,
+        "Fecha_nacimiento": nuevo.Fecha_nacimiento.strftime("%Y-%m-%d %H:%M:%S") if nuevo.Fecha_nacimiento else None,
+        "Fecha_ingreso": nuevo.Fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S") if nuevo.Fecha_ingreso else None,
+        "Cargo": nuevo.Cargo
+    }
 # ---------------------
 # Background Task
 # ---------------------
@@ -432,6 +462,23 @@ def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = 
 def obtener_fechas_ventas(db: Session = Depends(get_db)):
     fechas = db.query(Venta.Fecha_Venta).order_by(Venta.Fecha_Venta.asc()).limit(10).all()
     return [{"fecha": f[0]} for f in fechas]
+
+@app.get("/empleados")
+def obtener_empleados(db: Session = Depends(get_db)):
+    empleados = db.query(Empleado).all()
+    return [
+        {
+            "Id_Empleados": e.Id_Empleados,
+            "Nombres": e.Nombres,
+            "Telefono": e.Telefono,
+            "Correo": e.Correo,
+            "Fecha_nacimiento": e.Fecha_nacimiento.strftime("%Y-%m-%d %H:%M:%S") if e.Fecha_nacimiento else None,
+            "Fecha_ingreso": e.Fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S") if e.Fecha_ingreso else None,
+            "Cargo": e.Cargo
+        }
+        for e in empleados
+    ]
+
 
     
 # ---------------------
