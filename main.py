@@ -95,6 +95,29 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
+
+class Empleado(Base):
+    __tablename__ = "empleados"
+
+    Id_Empleados = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    Nombres = Column(String(90), nullable=False)
+    Telefono = Column(String(90))
+    Correo = Column(String(90))
+    Fecha_nacimiento = Column(DateTime)
+    Fecha_ingreso = Column(DateTime)
+    Cargo = Column(String(90))
+
+class EmpleadoSchema(BaseModel):
+    Id_Empleados: int
+    Nombres: str
+    Telefono: str | None = None
+    Correo: str | None = None
+    Fecha_nacimiento: datetime.datetime | None = None
+    Fecha_ingreso: datetime.datetime | None = None
+    Cargo: str | None = None
+
+    class Config:
+        orm_mode = True
     
 
 # ---------------------
@@ -432,6 +455,10 @@ def sales_data(start: str, end: str, aggregation: str = "Diario", db: Session = 
 def obtener_fechas_ventas(db: Session = Depends(get_db)):
     fechas = db.query(Venta.Fecha_Venta).order_by(Venta.Fecha_Venta.asc()).limit(10).all()
     return [{"fecha": f[0]} for f in fechas]
+
+@app.get("/empleados", response_model=List[EmpleadoSchema])
+def obtener_empleados(db: Session = Depends(get_db)):
+    return db.query(Empleado).all()
 
     
 # ---------------------
