@@ -21,7 +21,7 @@ Base = declarative_base()
 # Modelos de Base de Datos
 # ---------------------
 
-class admin(Base):
+class Admin(Base):
     __tablename__ = "admin"
     id_admin = Column(Integer, primary_key=True, index=True)
     usuario = Column(String(100))
@@ -141,13 +141,13 @@ def get_db():
 
 @app.get("/admin")
 def validar_admin(db_Session = Depends(get_db)):
-    admins = db.query(admin).all()
+    Admin = db.query(admin).all()
     return [
         {
             "usuario": a.usuario,
             "contrasena": a.contrasena
         }
-        for a in admins
+        for a in Admin
     ]
     
 @app.get("/ventas")
