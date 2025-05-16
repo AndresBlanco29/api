@@ -139,6 +139,17 @@ def get_db():
 # Endpoints
 # ---------------------
 
+@app.get("/admin")
+def validar_admin(db_Session = Depends(get_db)):
+    admins = db.query(admin).all()
+    return [
+        {
+            "usuario": a.usuario,
+            "contrasena": a.contrasena
+        }
+        for a in admins
+    ]
+    
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
     ventas = db.query(Venta).all()
@@ -445,16 +456,7 @@ def obtener_fechas_ventas(db: Session = Depends(get_db)):
     fechas = db.query(Venta.Fecha_Venta).order_by(Venta.Fecha_Venta.asc()).limit(10).all()
     return [{"fecha": f[0]} for f in fechas]
 
-@app.get("/admin")
-def validar_admin(db_Session = Depends(get_db)):
-    admin = db.query(admin).all()
-    return [
-        {
-            "usuario": a.usuario,
-            "contrasena": a.contrasena
-        }
-        for a in admin
-    ]
+
 
 @app.get("/empleados")
 def obtener_empleados(db_Session = Depends(get_db)):
