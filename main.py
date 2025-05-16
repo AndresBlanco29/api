@@ -1,16 +1,13 @@
 from fastapi import FastAPI, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, Float, DateTime, ForeignKey, String, func
-from sqlalchemy.orm import declarative_base  # actualizado
-from pydantic import BaseModel  # necesario para tu modelo de solicitud
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime
 from typing import List
 from datetime import datetime, timedelta, time as dt_time
 import time
 import uvicorn
-from email_utils import enviar_correo
-from fastapi import Body
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -101,10 +98,6 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
-
-
-class RecuperarContrasenaRequest(BaseModel):
-    email: str
     
 
 # ---------------------
@@ -136,25 +129,6 @@ def get_db():
 # ---------------------
 # Endpoints
 # ---------------------
-
-@app.get("/enviar-correo/")
-def enviar(db: Session = Depends(get_db)):
-    enviado = enviar_correo("destinatario@gmail.com", "Asunto de prueba", "Este es el cuerpo del mensaje.")
-    if enviado:
-        return {"mensaje": "Correo enviado correctamente"}
-    else:
-        return {"mensaje": "Error al enviar el correo"}
-
-@app.post("/recuperar-contrasena")
-def recuperar_contrasena(data: RecuperarContrasenaRequest, db: Session = Depends(get_db)):
-    asunto = "Recuperación de contraseña"
-    cuerpo = "Haz clic en este enlace para restablecer tu contraseña: https://tusitio.com/restablecer"
-    enviado = enviar_correo(destinatario=data.email, asunto=asunto, cuerpo=cuerpo)
-    if enviado:
-        return {"mensaje": "Correo enviado"}
-    else:
-        return {"mensaje": "Error al enviar el correo"}
-
 
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
@@ -484,4 +458,3 @@ def obtener_empleados(db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
