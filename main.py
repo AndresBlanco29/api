@@ -145,7 +145,7 @@ def enviar():
         return {"mensaje": "Error al enviar el correo"}
 
 @app.post("/recuperar-contrasena")
-def recuperar_contrasena(data: RecuperarContrasenaRequest):
+def recuperar_contrasena(db: Session = Depends(get_db)):
     asunto = "Recuperación de contraseña"
     cuerpo = "Haz clic en este enlace para restablecer tu contraseña: https://tusitio.com/restablecer"
     enviado = enviar_correo(destinatario=data.email, asunto=asunto, cuerpo=cuerpo)
