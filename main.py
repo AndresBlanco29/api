@@ -99,6 +99,9 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
+
+class RecuperarContrasenaRequest(BaseModel):
+    email: str
     
 
 # ---------------------
@@ -138,6 +141,17 @@ def enviar():
         return {"mensaje": "Correo enviado correctamente"}
     else:
         return {"mensaje": "Error al enviar el correo"}
+
+@app.post("/recuperar-contrasena")
+def recuperar_contrasena(data: RecuperarContrasenaRequest):
+    asunto = "Recuperación de contraseña"
+    cuerpo = "Haz clic en este enlace para restablecer tu contraseña: https://tusitio.com/restablecer"
+    enviado = enviar_correo(destinatario=data.email, asunto=asunto, cuerpo=cuerpo)
+    if enviado:
+        return {"mensaje": "Correo enviado"}
+    else:
+        return {"mensaje": "Error al enviar el correo"}
+
 
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
