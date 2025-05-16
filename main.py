@@ -1,7 +1,8 @@
 from fastapi import FastAPI, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, Float, DateTime, ForeignKey, String, func
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base  # actualizado
+from pydantic import BaseModel  # necesario para tu modelo de solicitud
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime
 from typing import List
@@ -99,6 +100,7 @@ class ProductoHasVenta(Base):
 
     venta = relationship("Venta")
     producto = relationship("Producto")
+
 
 class RecuperarContrasenaRequest(BaseModel):
     email: str
