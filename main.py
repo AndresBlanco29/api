@@ -8,6 +8,7 @@ from typing import List
 from datetime import datetime, timedelta, time as dt_time
 import time
 import uvicorn
+from email_utils import enviar_correo
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -129,6 +130,14 @@ def get_db():
 # ---------------------
 # Endpoints
 # ---------------------
+
+@app.get("/enviar-correo/")
+def enviar():
+    enviado = enviar_correo("destinatario@gmail.com", "Asunto de prueba", "Este es el cuerpo del mensaje.")
+    if enviado:
+        return {"mensaje": "Correo enviado correctamente"}
+    else:
+        return {"mensaje": "Error al enviar el correo"}
 
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
