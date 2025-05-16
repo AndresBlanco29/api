@@ -21,6 +21,15 @@ Base = declarative_base()
 # Modelos de Base de Datos
 # ---------------------
 
+class admin(Base):
+    __tablename__ = "admin"
+    id_admin = Column(Integer, primary_key=True, index=True)
+    usuario = Column(Varchar(100))
+    contrasena = Column(Varchar(100))
+    Nombre = Column(Varchar(100))
+    telefono = Column(Integer)
+    correo_electronico = Column(Varchar(100))
+
 class Venta(Base):
     __tablename__ = "ventas"
     Id_Venta = Column(Integer, primary_key=True, index=True)
