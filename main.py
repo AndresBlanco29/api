@@ -24,11 +24,11 @@ Base = declarative_base()
 class admin(Base):
     __tablename__ = "admin"
     id_admin = Column(Integer, primary_key=True, index=True)
-    usuario = Column(Varchar(100))
-    contrasena = Column(Varchar(100))
-    Nombre = Column(Varchar(100))
+    usuario = Column(String(100))
+    contrasena = Column(String(100))
+    Nombre = Column(String(100))
     telefono = Column(Integer)
-    correo_electronico = Column(Varchar(100))
+    correo_electronico = Column(String(100))
 
 class Venta(Base):
     __tablename__ = "ventas"
