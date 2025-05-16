@@ -447,7 +447,7 @@ def obtener_fechas_ventas(db: Session = Depends(get_db)):
 
 @app.get("/admin")
 def validar_admin(db_Session = Depends(get_db)):
-    admin = db.query(admin)
+    admin = db.query(admin).all()
     return [
         {
             "usuario": a.usuario,
