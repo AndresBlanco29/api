@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, time as dt_time
 import time
 import uvicorn
 from email_utils import enviar_correo
+from fastapi import Body
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -145,7 +146,7 @@ def enviar(db: Session = Depends(get_db)):
         return {"mensaje": "Error al enviar el correo"}
 
 @app.post("/recuperar-contrasena")
-def recuperar_contrasena(db: Session = Depends(get_db)):
+def recuperar_contrasena(data: RecuperarContrasenaRequest, db: Session = Depends(get_db)):
     asunto = "Recuperación de contraseña"
     cuerpo = "Haz clic en este enlace para restablecer tu contraseña: https://tusitio.com/restablecer"
     enviado = enviar_correo(destinatario=data.email, asunto=asunto, cuerpo=cuerpo)
