@@ -140,15 +140,16 @@ def get_db():
 # ---------------------
 
 @app.get("/admin")
-def validar_admin(db_Session = Depends(get_db)):
-    Admin = db.query(admin).all()
+def validar_admin(db: Session = Depends(get_db)):
+    admins = db.query(Admin).all()
     return [
         {
             "usuario": a.usuario,
             "contrasena": a.contrasena
         }
-        for a in Admin
+        for a in admins
     ]
+
     
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
