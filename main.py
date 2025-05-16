@@ -137,7 +137,7 @@ def get_db():
 # ---------------------
 
 @app.get("/enviar-correo/")
-def enviar():
+def enviar(db: Session = Depends(get_db)):
     enviado = enviar_correo("destinatario@gmail.com", "Asunto de prueba", "Este es el cuerpo del mensaje.")
     if enviado:
         return {"mensaje": "Correo enviado correctamente"}
