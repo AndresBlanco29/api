@@ -8,25 +8,6 @@ from typing import List
 from datetime import datetime, timedelta, time as dt_time
 import time
 import uvicorn
-from fastapi import WebSocket, WebSocketDisconnect
-
-# Guardar las conexiones activas
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-manager = ConnectionManager()
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -35,8 +16,6 @@ DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hop
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-
 
 # ---------------------
 # Modelos de Base de Datos
@@ -170,16 +149,6 @@ def validar_admin(db: Session = Depends(get_db)):
         }
         for a in admins
     ]
-@app.websocket("/ws/ventas")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            print(f"Mensaje recibido del cliente: {data}")
-            await manager.broadcast(f"Echo: {data}")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
 
     
 @app.get("/ventas")
