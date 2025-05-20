@@ -171,14 +171,16 @@ def validar_admin(db: Session = Depends(get_db)):
         for a in admins
     ]
 @app.websocket("/ws/ventas")
-async def websocket_ventas(websocket: WebSocket):
-    await websocket.accept()
-    clientes_websocket.append(websocket)
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text()  # Espera mensajes (puedes ignorarlo si solo envías desde servidor)
+            data = await websocket.receive_text()
+            print(f"Mensaje recibido del cliente: {data}")
+            await manager.broadcast(f"Echo: {data}")
     except WebSocketDisconnect:
-        clientes_websocket.remove(websocket)
+        manager.disconnect(websocket)
+
     
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
