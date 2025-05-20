@@ -8,6 +8,7 @@ from typing import List
 from datetime import datetime, timedelta, time as dt_time
 import time
 import uvicorn
+from fastapi import WebSocket, WebSocketDisconnect
 
 # URL de conexión Railway
 DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hopper.proxy.rlwy.net:54973/railway"
@@ -16,6 +17,8 @@ DATABASE_URL = "mysql+mysqlconnector://root:gOETksBanEaqSzdndWKVEQKKoHWaRmIU@hop
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+clientes_websocket: List[WebSocket] = []
 
 # ---------------------
 # Modelos de Base de Datos
@@ -149,7 +152,15 @@ def validar_admin(db: Session = Depends(get_db)):
         }
         for a in admins
     ]
-
+@app.websocket("/ws/ventas")
+async def websocket_ventas(websocket: WebSocket):
+    await websocket.accept()
+    clientes_websocket.append(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Espera mensajes (puedes ignorarlo si solo envías desde servidor)
+    except WebSocketDisconnect:
+        clientes_websocket.remove(websocket)
     
 @app.get("/ventas")
 def obtener_ventas(db: Session = Depends(get_db)):
