@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, Depends
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, Float, DateTime, ForeignKey, String, func
 from sqlalchemy.ext.declarative import declarative_base
@@ -153,6 +153,23 @@ def validar_admin(db: Session = Depends(get_db)):
         }
         for a in admins
     ]
+
+
+
+@app.get("/admin/{id_admin}")
+def obtener_admin(id_admin: int, db: Session = Depends(get_db)):
+    admin = db.query(Admin).filter(Admin.id_admin == id_admin).first()
+    if admin is None:
+        raise HTTPException(status_code=404, detail="Admin no encontrado")
+    
+    return {
+        "id_admin": admin.id_admin,
+        "usuario": admin.usuario,
+        "Nombre": admin.Nombre,
+        "telefono": admin.telefono,
+        "correo_electronico": admin.correo_electronico
+    }
+
 
     
 @app.get("/ventas")
