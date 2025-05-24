@@ -144,7 +144,7 @@ def validar_admin(db: Session = Depends(get_db)):
     admins = db.query(Admin).all()
     return [
         {
-            "id_admin": a.id_admin
+            "id_admin": a.id_admin,
             "usuario": a.usuario,
             "contrasena": a.contrasena
         }
