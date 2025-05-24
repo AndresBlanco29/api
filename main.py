@@ -146,7 +146,7 @@ def validar_admin(db: Session = Depends(get_db)):
         {
             "id_admin": a.id_admin,
             "usuario": a.usuario,
-            "contrasena": a.contrasena
+            "contrasena": a.contrasena,
             "Nombre": a.Nombre,
             "telefono": a.telefono,
             "correo_electronico": a.correo_electronico
